@@ -25,8 +25,8 @@ To implement necessary features step by step so that users can effectively use H
 
 #### Implementation Details
 
-- `/api/cache/stats` - Cache statistics API
-- `/api/cache/repos` - Cached repository list API
+- `/cache-stats` - Cache statistics API
+- `/cache-repos` - Cached repository list API
 - Web UI improvements (search, filtering, sorting)
 - Cache efficiency analysis tools
 

@@ -231,16 +231,16 @@ Get an overview of your cache usage:
 
 ```bash
 # 전체 캐시 통계
-curl http://localhost:8090/api/cache/stats
+curl http://localhost:8090/cache-stats
 
 # 캐시된 저장소 목록
-curl http://localhost:8090/api/cache/repos
+curl http://localhost:8090/cache-repos
 
 # 특정 저장소 상세 정보
-curl http://localhost:8090/api/cache/repos/models/openai/gpt2
+curl http://localhost:8090/cache-repos/models/openai/gpt2
 
 # 저장소 검색
-curl "http://localhost:8090/api/cache/search?query=gpt&repo_type=models"
+curl "http://localhost:8090/cache-search?query=gpt&repo_type=models"
 ```
 
 ### Web Interface
@@ -256,10 +256,10 @@ Visit `http://localhost:8090/repos` to access the enhanced web interface that pr
 
 | Endpoint                                    | Method | Description                                             |
 | ------------------------------------------- | ------ | ------------------------------------------------------- |
-| `/api/cache/stats`                          | GET    | Overall cache statistics and efficiency information     |
-| `/api/cache/repos`                          | GET    | Cached repository list (with filtering/sorting support) |
-| `/api/cache/repos/{repo_type}/{org}/{repo}` | GET    | Specific repository details                             |
-| `/api/cache/search`                         | GET    | Repository search (by name/description)                 |
+| `/cache-stats`                              | GET    | Overall cache statistics and efficiency information     |
+| `/cache-repos`                              | GET    | Cached repository list (with filtering/sorting support) |
+| `/cache-repos/{repo_type}/{org}/{repo}`     | GET    | Specific repository details                             |
+| `/cache-search`                             | GET    | Repository search (by name/description)                 |
 
 ### Query Parameters
 
