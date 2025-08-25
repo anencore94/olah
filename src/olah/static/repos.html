@@ -1,74 +1,489 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <link rel="stylesheet" type="text/css"
-        href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.css">
+  <head>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.css"
+    />
     <style>
-        .ui.container {
-            margin-top: 20px;
-        }
+      .ui.container {
+        margin-top: 20px;
+      }
 
-        .ui.card {
-            margin-bottom: 20px;
-        }
+      .ui.card {
+        margin-bottom: 20px;
+      }
 
-        .ui.header {
-            margin-top: 10px;
-        }
+      .ui.header {
+        margin-top: 10px;
+      }
 
-        .ui.segment {
-            margin-bottom: 30px;
-        }
+      .ui.segment {
+        margin-bottom: 30px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stats-card {
+        text-align: center;
+        padding: 1rem;
+      }
+
+      .search-section {
+        margin-bottom: 2rem;
+      }
+
+      .repo-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .repo-item:hover {
+        background-color: #f8f9fa;
+      }
+
+      .repo-details {
+        margin-top: 0.5rem;
+        font-size: 0.9em;
+        color: #666;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .error {
+        color: #d63384;
+        text-align: center;
+        padding: 1rem;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="ui container">
-        <h1 class="ui header">Huggingface Mirror Repositories</h1>
+      <h1 class="ui header">Huggingface Mirror Cache Management</h1>
+
+      <!-- 캐시 통계 섹션 -->
+      <div class="ui segment">
+        <h2 class="ui header">Cache Statistics</h2>
+        <div id="cache-stats" class="stats-grid">
+          <div class="ui placeholder">
+            <div class="loading">Loading cache statistics...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 검색 및 필터링 섹션 -->
+      <div class="ui segment search-section">
+        <h2 class="ui header">Search & Filter</h2>
+        <div class="ui form">
+          <div class="three fields">
+            <div class="field">
+              <label>Search Query</label>
+              <input
+                type="text"
+                id="search-query"
+                placeholder="Enter repository name or description..."
+              />
+            </div>
+            <div class="field">
+              <label>Repository Type</label>
+              <select id="repo-type-filter" class="ui dropdown">
+                <option value="">All Types</option>
+                <option value="models">Models</option>
+                <option value="datasets">Datasets</option>
+                <option value="spaces">Spaces</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Sort By</label>
+              <select id="sort-by" class="ui dropdown">
+                <option value="size">Size</option>
+                <option value="last_access">Last Access</option>
+                <option value="last_modified">Last Modified</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
+          </div>
+          <div class="two fields">
+            <div class="field">
+              <label>Sort Order</label>
+              <select id="sort-order" class="ui dropdown">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Limit Results</label>
+              <input
+                type="number"
+                id="result-limit"
+                placeholder="100"
+                value="100"
+                min="1"
+                max="1000"
+              />
+            </div>
+          </div>
+          <button class="ui primary button" onclick="searchRepos()">
+            Search
+          </button>
+          <button class="ui button" onclick="resetFilters()">Reset</button>
+        </div>
+      </div>
+
+      <!-- 검색 결과 섹션 -->
+      <div class="ui segment">
+        <h2 class="ui header">Cached Repositories</h2>
+        <div id="search-results">
+          <div class="ui placeholder">
+            <div class="loading">Use search to find cached repositories...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 기존 저장소 목록 (하위 호환성) -->
+      <div class="ui segment">
+        <h2 class="ui header">All Cached Repositories</h2>
 
         <div class="ui segment">
-            <h2 class="ui header">Data Sets</h2>
-            <div class="ui divided items">
-                {% for dataset_repo in datasets_repos %}
-                <div class="item">
-                    <div class="content">
-                        <div class="header">{{ dataset_repo }}</div>
-                    </div>
-                </div>
-                {% endfor %}
+          <h3 class="ui header">Data Sets</h3>
+          <div class="ui divided items">
+            {% for dataset_repo in datasets_repos %}
+            <div
+              class="item repo-item"
+              onclick="showRepoDetails('datasets', '{{ dataset_repo.split('/')[0] }}', '{{ dataset_repo.split('/')[1] }}')"
+            >
+              <div class="content">
+                <div class="header">{{ dataset_repo }}</div>
+              </div>
             </div>
+            {% endfor %}
+          </div>
         </div>
 
         <div class="ui segment">
-            <h2 class="ui header">Models</h2>
-            <div class="ui divided items">
-                {% for model_repo in models_repos %}
-                <div class="item">
-                    <div class="content">
-                        <div class="header">{{ model_repo }}</div>
-                    </div>
-                </div>
-                {% endfor %}
+          <h3 class="ui header">Models</h3>
+          <div class="ui divided items">
+            {% for model_repo in models_repos %}
+            <div
+              class="item repo-item"
+              onclick="showRepoDetails('models', '{{ model_repo.split('/')[0] }}', '{{ model_repo.split('/')[1] }}')"
+            >
+              <div class="content">
+                <div class="header">{{ model_repo }}</div>
+              </div>
             </div>
+            {% endfor %}
+          </div>
         </div>
 
         <div class="ui segment">
-            <h2 class="ui header">Spaces</h2>
-            <div class="ui divided items">
-                {% for space_repo in spaces_repos %}
-                <div class="item">
-                    <div class="content">
-                        <div class="header">{{ space_repo }}</div>
-                    </div>
-                </div>
-                {% endfor %}
+          <h3 class="ui header">Spaces</h3>
+          <div class="ui divided items">
+            {% for space_repo in spaces_repos %}
+            <div
+              class="item repo-item"
+              onclick="showRepoDetails('spaces', '{{ space_repo.split('/')[0] }}', '{{ space_repo.split('/')[1] }}')"
+            >
+              <div class="content">
+                <div class="header">{{ space_repo }}</div>
+              </div>
             </div>
+            {% endfor %}
+          </div>
         </div>
+      </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"
-        integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.js"></script>
-</body>
 
+    <!-- 저장소 상세 정보 모달 -->
+    <div class="ui modal" id="repo-modal">
+      <div class="header" id="repo-modal-header">Repository Details</div>
+      <div class="content" id="repo-modal-content">
+        <div class="loading">Loading repository details...</div>
+      </div>
+      <div class="actions">
+        <div class="ui button" onclick="closeRepoModal()">Close</div>
+      </div>
+    </div>
+
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.5.0/semantic.min.js"></script>
+
+    <script>
+      // 페이지 로드 시 캐시 통계 로드
+      document.addEventListener("DOMContentLoaded", function () {
+        loadCacheStats();
+      });
+
+      // 캐시 통계 로드
+      async function loadCacheStats() {
+        try {
+          const response = await fetch("/api/cache/stats");
+          const data = await response.json();
+
+          if (data.status === "success") {
+            displayCacheStats(data.overview, data.efficiency);
+          } else {
+            document.getElementById(
+              "cache-stats"
+            ).innerHTML = `<div class="error">Failed to load cache statistics: ${data.message}</div>`;
+          }
+        } catch (error) {
+          document.getElementById(
+            "cache-stats"
+          ).innerHTML = `<div class="error">Error loading cache statistics: ${error.message}</div>`;
+        }
+      }
+
+      // 캐시 통계 표시
+      function displayCacheStats(overview, efficiency) {
+        const statsHtml = `
+                <div class="stats-card">
+                    <h3>Total Size</h3>
+                    <div class="ui huge statistic">
+                        <div class="value">${overview.total_size_human}</div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <h3>Total Files</h3>
+                    <div class="ui huge statistic">
+                        <div class="value">${overview.total_files.toLocaleString()}</div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <h3>Total Repositories</h3>
+                    <div class="ui huge statistic">
+                        <div class="value">${Object.values(
+                          overview.repo_counts
+                        ).reduce((sum, repo) => sum + repo.repo_count, 0)}</div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <h3>Access Efficiency</h3>
+                    <div class="ui huge statistic">
+                        <div class="value">${efficiency.access_efficiency.toFixed(
+                          1
+                        )}%</div>
+                    </div>
+                </div>
+            `;
+
+        document.getElementById("cache-stats").innerHTML = statsHtml;
+      }
+
+      // 저장소 검색
+      async function searchRepos() {
+        const query = document.getElementById("search-query").value;
+        const repoType = document.getElementById("repo-type-filter").value;
+        const sortBy = document.getElementById("sort-by").value;
+        const sortOrder = document.getElementById("sort-order").value;
+        const limit = document.getElementById("result-limit").value;
+
+        const searchResults = document.getElementById("search-results");
+        searchResults.innerHTML = '<div class="loading">Searching...</div>';
+
+        try {
+          let url = "/api/cache/repos?";
+          if (query) url += `search=${encodeURIComponent(query)}&`;
+          if (repoType) url += `repo_type=${repoType}&`;
+          if (sortBy) url += `sort_by=${sortBy}&`;
+          if (sortOrder) url += `sort_order=${sortOrder}&`;
+          if (limit) url += `limit=${limit}`;
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (data.status === "success") {
+            displaySearchResults(data.repos, data.total_count);
+          } else {
+            searchResults.innerHTML = `<div class="error">Search failed: ${data.message}</div>`;
+          }
+        } catch (error) {
+          searchResults.innerHTML = `<div class="error">Search error: ${error.message}</div>`;
+        }
+      }
+
+      // 검색 결과 표시
+      function displaySearchResults(repos, totalCount) {
+        if (repos.length === 0) {
+          document.getElementById("search-results").innerHTML =
+            '<div class="ui placeholder"><div class="text">No repositories found</div></div>';
+          return;
+        }
+
+        const resultsHtml = `
+                <div class="ui info message">
+                    Found ${totalCount} repository(ies)
+                </div>
+                <div class="ui divided items">
+                    ${repos
+                      .map(
+                        (repo) => `
+                        <div class="item repo-item" onclick="showRepoDetails('${
+                          repo.repo_type
+                        }', '${repo.org}', '${repo.repo}')">
+                            <div class="content">
+                                <div class="header">${repo.full_name}</div>
+                                <div class="meta">
+                                    <span class="ui label">${
+                                      repo.repo_type
+                                    }</span>
+                                    <span class="ui label">${
+                                      repo.size_human
+                                    }</span>
+                                </div>
+                                <div class="repo-details">
+                                    Last modified: ${new Date(
+                                      repo.last_modified
+                                    ).toLocaleDateString()}<br>
+                                    Last access: ${new Date(
+                                      repo.last_access
+                                    ).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                </div>
+            `;
+
+        document.getElementById("search-results").innerHTML = resultsHtml;
+      }
+
+      // 필터 초기화
+      function resetFilters() {
+        document.getElementById("search-query").value = "";
+        document.getElementById("repo-type-filter").value = "";
+        document.getElementById("sort-by").value = "size";
+        document.getElementById("sort-order").value = "desc";
+        document.getElementById("result-limit").value = "100";
+
+        document.getElementById("search-results").innerHTML =
+          '<div class="ui placeholder"><div class="loading">Use search to find cached repositories...</div></div>';
+      }
+
+      // 저장소 상세 정보 표시
+      async function showRepoDetails(repoType, org, repo) {
+        const modal = document.getElementById("repo-modal");
+        const header = document.getElementById("repo-modal-header");
+        const content = document.getElementById("repo-modal-content");
+
+        header.textContent = `${org}/${repo} (${repoType})`;
+        content.innerHTML =
+          '<div class="loading">Loading repository details...</div>';
+
+        try {
+          const response = await fetch(
+            `/api/cache/repos/${repoType}/${org}/${repo}`
+          );
+          const data = await response.json();
+
+          if (data.status === "success") {
+            const repoInfo = data.repo;
+            content.innerHTML = `
+                        <div class="ui list">
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">Repository Type</div>
+                                    <div class="description">${
+                                      repoInfo.repo_type
+                                    }</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">Size</div>
+                                    <div class="description">${
+                                      repoInfo.size_human
+                                    }</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">Last Modified</div>
+                                    <div class="description">${new Date(
+                                      repoInfo.last_modified
+                                    ).toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">Last Access</div>
+                                    <div class="description">${new Date(
+                                      repoInfo.last_access
+                                    ).toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">Path</div>
+                                    <div class="description">${
+                                      repoInfo.path
+                                    }</div>
+                                </div>
+                            </div>
+                            ${
+                              repoInfo.file_count
+                                ? `
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">File Count</div>
+                                    <div class="description">${repoInfo.file_count}</div>
+                                </div>
+                            </div>
+                            `
+                                : ""
+                            }
+                            ${
+                              repoInfo.description
+                                ? `
+                            <div class="item">
+                                <div class="content">
+                                    <div class="header">Description</div>
+                                    <div class="description">${repoInfo.description}</div>
+                                </div>
+                            </div>
+                            `
+                                : ""
+                            }
+                        </div>
+                    `;
+          } else {
+            content.innerHTML = `<div class="error">Failed to load repository details: ${data.message}</div>`;
+          }
+        } catch (error) {
+          content.innerHTML = `<div class="error">Error loading repository details: ${error.message}</div>`;
+        }
+
+        modal.classList.add("active");
+      }
+
+      // 저장소 모달 닫기
+      function closeRepoModal() {
+        document.getElementById("repo-modal").classList.remove("active");
+      }
+
+      // 모달 외부 클릭 시 닫기
+      document.addEventListener("click", function (event) {
+        const modal = document.getElementById("repo-modal");
+        if (event.target === modal) {
+          closeRepoModal();
+        }
+      });
+    </script>
+  </body>
 </html>
