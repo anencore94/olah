@@ -231,20 +231,24 @@
       // 캐시 통계 로드
       async function loadCacheStats() {
         try {
-          const response = await fetch("/api/cache/stats");
+          const response = await fetch("/cache-stats");
           const data = await response.json();
 
           if (data.status === "success") {
             displayCacheStats(data.overview, data.efficiency);
           } else {
-            document.getElementById(
-              "cache-stats"
-            ).innerHTML = `<div class="error">Failed to load cache statistics: ${data.message}</div>`;
+            const errorDiv = document.createElement("div");
+            errorDiv.className = "error";
+            errorDiv.textContent = `Failed to load cache statistics: ${data.message}`;
+            document.getElementById("cache-stats").innerHTML = "";
+            document.getElementById("cache-stats").appendChild(errorDiv);
           }
         } catch (error) {
-          document.getElementById(
-            "cache-stats"
-          ).innerHTML = `<div class="error">Error loading cache statistics: ${error.message}</div>`;
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "error";
+          errorDiv.textContent = `Error loading cache statistics: ${error.message}`;
+          document.getElementById("cache-stats").innerHTML = "";
+          document.getElementById("cache-stats").appendChild(errorDiv);
         }
       }
 
@@ -296,7 +300,7 @@
         searchResults.innerHTML = '<div class="loading">Searching...</div>';
 
         try {
-          let url = "/api/cache/repos?";
+          let url = "/cache-repos?";
           if (query) url += `search=${encodeURIComponent(query)}&`;
           if (repoType) url += `repo_type=${repoType}&`;
           if (sortBy) url += `sort_by=${sortBy}&`;
@@ -309,10 +313,18 @@
           if (data.status === "success") {
             displaySearchResults(data.repos, data.total_count);
           } else {
-            searchResults.innerHTML = `<div class="error">Search failed: ${data.message}</div>`;
+            const errorDiv = document.createElement("div");
+            errorDiv.className = "error";
+            errorDiv.textContent = `Search failed: ${data.message}`;
+            searchResults.innerHTML = "";
+            searchResults.appendChild(errorDiv);
           }
         } catch (error) {
-          searchResults.innerHTML = `<div class="error">Search error: ${error.message}</div>`;
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "error";
+          errorDiv.textContent = `Search error: ${error.message}`;
+          searchResults.innerHTML = "";
+          searchResults.appendChild(errorDiv);
         }
       }
 
@@ -388,7 +400,7 @@
 
         try {
           const response = await fetch(
-            `/api/cache/repos/${repoType}/${org}/${repo}`
+            `/cache-repos/${repoType}/${org}/${repo}`
           );
           const data = await response.json();
 
@@ -463,10 +475,18 @@
                         </div>
                     `;
           } else {
-            content.innerHTML = `<div class="error">Failed to load repository details: ${data.message}</div>`;
+            const errorDiv = document.createElement("div");
+            errorDiv.className = "error";
+            errorDiv.textContent = `Failed to load repository details: ${data.message}`;
+            content.innerHTML = "";
+            content.appendChild(errorDiv);
           }
         } catch (error) {
-          content.innerHTML = `<div class="error">Error loading repository details: ${error.message}</div>`;
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "error";
+          errorDiv.textContent = `Error loading repository details: ${error.message}`;
+          content.innerHTML = "";
+          content.appendChild(errorDiv);
         }
 
         modal.classList.add("active");
