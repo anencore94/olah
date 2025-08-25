@@ -254,12 +254,12 @@ Visit `http://localhost:8090/repos` to access the enhanced web interface that pr
 
 ### API Endpoints
 
-| Endpoint                                    | Method | Description                                             |
-| ------------------------------------------- | ------ | ------------------------------------------------------- |
-| `/cache-stats`                              | GET    | Overall cache statistics and efficiency information     |
-| `/cache-repos`                              | GET    | Cached repository list (with filtering/sorting support) |
-| `/cache-repos/{repo_type}/{org}/{repo}`     | GET    | Specific repository details                             |
-| `/cache-search`                             | GET    | Repository search (by name/description)                 |
+| Endpoint                                | Method | Description                                             |
+| --------------------------------------- | ------ | ------------------------------------------------------- |
+| `/cache-stats`                          | GET    | Overall cache statistics and efficiency information     |
+| `/cache-repos`                          | GET    | Cached repository list (with filtering/sorting support) |
+| `/cache-repos/{repo_type}/{org}/{repo}` | GET    | Specific repository details                             |
+| `/cache-search`                         | GET    | Repository search (by name/description)                 |
 
 ### Query Parameters
 
