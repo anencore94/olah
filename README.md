@@ -10,14 +10,16 @@ Olah does not immediately mirror the entire huggingface website but mirrors the 
 Other languages: [中文](README_zh.md)
 
 ## Advantages of Olah
+
 Olah has the capability to cache files in chunks while users download them. Upon subsequent downloads, the files can be directly retrieved from the cache, greatly enhancing download speeds and saving bandwidth.
 Additionally, Olah offers a range of cache control policies. Administrators can configure which repositories are accessible and which ones can be cached through a configuration file.
 
 ## Features
-* Huggingface Data Cache
-* Models mirror
-* Datasets mirror
-* Spaces mirror
+
+- Huggingface Data Cache
+- Models mirror
+- Datasets mirror
+- Spaces mirror
 
 ## Install
 
@@ -30,42 +32,49 @@ pip install olah
 or:
 
 ```bash
-pip install git+https://github.com/vtuber-plan/olah.git 
+pip install git+https://github.com/vtuber-plan/olah.git
 ```
 
 ### Method 2: From source
 
 1. Clone this repository
+
 ```bash
 git clone https://github.com/vtuber-plan/olah.git
 cd olah
 ```
 
 2. Install the Package
+
 ```bash
 pip install --upgrade pip
 pip install -e .
 ```
 
 ## Quick Start
-Run the command in the console: 
+
+Run the command in the console:
+
 ```bash
 olah-cli
 ```
 
 Then set the Environment Variable `HF_ENDPOINT` to the mirror site (Here is http://localhost:8090).
 
-Linux: 
+Linux:
+
 ```bash
 export HF_ENDPOINT=http://localhost:8090
 ```
 
 Windows Powershell:
+
 ```bash
 $env:HF_ENDPOINT = "http://localhost:8090"
 ```
 
 Starting from now on, all download operations in the HuggingFace library will be proxied through this mirror site.
+
 ```bash
 pip install -U huggingface_hub
 ```
@@ -81,11 +90,13 @@ snapshot_download(repo_id='Qwen/Qwen-7B', repo_type='model',
 Or you can download models and datasets by using huggingface cli.
 
 Download GPT2:
+
 ```bash
 huggingface-cli download --resume-download openai-community/gpt2 --local-dir gpt2
 ```
 
 Download WikiText:
+
 ```bash
 huggingface-cli download --repo-type dataset --resume-download Salesforce/wikitext --local-dir wikitext
 ```
@@ -93,21 +104,27 @@ huggingface-cli download --repo-type dataset --resume-download Salesforce/wikite
 You can check the path `./repos`, in which olah stores all cached datasets and models.
 
 ## Start the server
-Run the command in the console: 
+
+Run the command in the console:
+
 ```bash
 olah-cli
 ```
 
 Or you can specify the host address and listening port:
+
 ```bash
 olah-cli --host localhost --port 8090
 ```
+
 **Note: Please change --mirror-netloc and --mirror-lfs-netloc to the actual URLs of the mirror sites when modifying the host and port.**
+
 ```bash
 olah-cli --host 192.168.1.100 --port 8090 --mirror-netloc 192.168.1.100:8090
 ```
 
 The default mirror cache path is `./repos`, you can change it by `--repos-path` parameter:
+
 ```bash
 olah-cli --host localhost --port 8090 --repos-path ./hf_mirrors
 ```
@@ -117,6 +134,7 @@ olah-cli --host localhost --port 8090 --repos-path ./hf_mirrors
 In deployment scenarios, there may be high concurrent downloads, leading to Timeout errors for new connections.
 You can set the `WEB_CONCURRENCY` variable for uvicorn to increase the number of workers, thereby enhancing concurrency in production environments.
 For example, on Linux:
+
 ```bash
 export WEB_CONCURRENCY=4
 ```
@@ -124,6 +142,7 @@ export WEB_CONCURRENCY=4
 ## More Configurations
 
 Additional configurations can be controlled through a configuration file by passing the `configs.toml` file as a command parameter:
+
 ```bash
 olah-cli -c configs.toml
 ```
@@ -131,7 +150,9 @@ olah-cli -c configs.toml
 The complete content of the configuration file can be found at [assets/full_configs.toml](https://github.com/vtuber-plan/olah/blob/main/assets/full_configs.toml).
 
 ### Configuration Details
+
 The first section, `basic`, is used to set up basic configurations for the mirror site:
+
 ```toml
 [basic]
 host = "localhost"
@@ -149,6 +170,7 @@ mirror-netloc = "localhost:8090"
 mirror-lfs-netloc = "localhost:8090"
 mirrors-path = ["./mirrors_dir"]
 ```
+
 - `host`: Sets the host address that Olah listens to.
 - `port`: Sets the port that Olah listens to.
 - `ssl-key` and `ssl-cert`: When enabling HTTPS, specify the file paths for the key and certificate.
@@ -164,6 +186,7 @@ mirrors-path = ["./mirrors_dir"]
 - `mirrors-path`: Additional mirror file directories. If you have already cloned some Git repositories, you can place them in this directory for downloading. In this example, the directory is `./mirrors_dir`. To add a dataset like `Salesforce/wikitext`, you can place the Git repository in the directory `./mirrors_dir/datasets/Salesforce/wikitext`. Similarly, models can be placed under `./mirrors_dir/models/organization/repository`.
 
 The second section allows for accessibility restrictions:
+
 ```toml
 [accessibility]
 offline = false
@@ -193,28 +216,77 @@ allow = true
 repo = "adept/fuyu-8b"
 allow = false
 ```
+
 - `offline`: Sets whether the Olah mirror site enters offline mode, no longer making requests to the Hugging Face official site for data updates. However, cached repositories can still be downloaded.
 - `proxy`: Determines if the repository can be accessed through a proxy. By default, all repositories are allowed. The `repo` field is used to match the repository name. Regular expressions and wildcards can be used by setting `use_re` to control whether to use regular expressions (default is to use wildcards). The `allow` field controls whether the repository is allowed to be proxied.
 - `cache`: Determines if the repository will be cached. By default, all repositories are allowed. The `repo` field is used to match the repository name. Regular expressions and wildcards can be used by setting `use_re` to control whether to use regular expressions (default is to use wildcards). The `allow` field controls whether the repository is allowed to be cached.
 
+## Cache Management Features
+
+Olah provides comprehensive cache management capabilities to help you monitor and manage your cached repositories effectively.
+
+### Cache Statistics API
+
+Get an overview of your cache usage:
+
+```bash
+# 전체 캐시 통계
+curl http://localhost:8090/cache-stats
+
+# 캐시된 저장소 목록
+curl http://localhost:8090/cache-repos
+
+# 특정 저장소 상세 정보
+curl http://localhost:8090/cache-repos/models/openai/gpt2
+
+# 저장소 검색
+curl "http://localhost:8090/cache-search?query=gpt&repo_type=models"
+```
+
+### Web Interface
+
+Visit `http://localhost:8090/repos` to access the enhanced web interface that provides:
+
+- **Cache Statistics Dashboard**: Real-time overview of cache usage, file counts, and access efficiency
+- **Advanced Search & Filtering**: Search repositories by name, filter by type, and sort by various criteria
+- **Repository Details**: Click on any repository to view detailed information including size, access times, and file counts
+- **Interactive Management**: Sort, filter, and explore your cached repositories with an intuitive interface
+
+### API Endpoints
+
+| Endpoint                                | Method | Description                                             |
+| --------------------------------------- | ------ | ------------------------------------------------------- |
+| `/cache-stats`                          | GET    | Overall cache statistics and efficiency information     |
+| `/cache-repos`                          | GET    | Cached repository list (with filtering/sorting support) |
+| `/cache-repos/{repo_type}/{org}/{repo}` | GET    | Specific repository details                             |
+| `/cache-search`                         | GET    | Repository search (by name/description)                 |
+
+### Query Parameters
+
+- `repo_type`: Repository type filter (models, datasets, spaces)
+- `sort_by`: Sort criteria (size, last_access, last_modified, name)
+- `sort_order`: Sort order (asc, desc)
+- `limit`: Result limit count
+- `search`: Search query
+
 ## Future Work
 
-* Administrator and user system
-* OOS backend support
-* Mirror Update Schedule Task
+- Administrator and user system
+- OOS backend support
+- Mirror Update Schedule Task
+- Enhanced metrics and monitoring
+- Advanced download engines (hf_transfer, xet)
+- OIDC authentication and RBAC
 
 ## License
 
 olah is released under the MIT License.
-
 
 ## See also
 
 - [olah-docs](https://github.com/vtuber-plan/olah/tree/main/docs)
 - [olah-source](https://github.com/vtuber-plan/olah)
 
-
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=vtuber-plan/olah&type=Date)](https://star-history.com/#vtuber-plan/olah&Date)
-
