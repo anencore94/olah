@@ -166,6 +166,12 @@ cython_debug/
 /logs/
 /cache/
 
+# Integration test and local cache artifacts
+.cache_hf_cli/
+integration_tests/.cache_hf_cli/
+integration_tests/repos/
+gpt2/
+
 *.key
 *.csr
 *.pem
