@@ -34,6 +34,7 @@ from olah.proxy.pathsinfo import pathsinfo_generator
 from olah.proxy.tree import tree_generator
 from olah.utils.disk_utils import convert_bytes_to_human_readable, convert_to_bytes, get_folder_size, sort_files_by_access_time, sort_files_by_modify_time, sort_files_by_size
 from olah.utils.url_utils import clean_path
+from olah.utils.cache_stats import CacheStats
 
 BASE_SETTINGS = False
 if not BASE_SETTINGS:
@@ -1117,6 +1118,126 @@ async def repos(request: Request):
             "spaces_repos": spaces_repos,
         },
     )
+
+
+# ======================
+# Cache Management API
+# ======================
+@app.get("/cache-stats")
+async def get_cache_stats():
+    """Returns overall cache statistics information"""
+    try:
+        cache_stats = CacheStats(app.state.app_settings.config.repos_path)
+        overview = cache_stats.get_cache_overview()
+        efficiency = cache_stats.get_cache_efficiency()
+        
+        return {
+            "overview": overview,
+            "efficiency": efficiency,
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cache stats: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/cache-repos")
+async def get_cached_repos(
+    repo_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    sort_by: str = "size",
+    sort_order: str = "desc",
+    search: Optional[str] = None
+):
+    """Returns list of cached repositories"""
+    try:
+        cache_stats = CacheStats(app.state.app_settings.config.repos_path)
+        
+        if search:
+            repos = cache_stats.search_repos(search, repo_type)
+        else:
+            repos = cache_stats.get_cached_repos(
+                repo_type=repo_type,
+                limit=limit,
+                sort_by=sort_by,
+                sort_order=sort_order
+            )
+        
+        return {
+            "repos": repos,
+            "total_count": len(repos),
+            "filters": {
+                "repo_type": repo_type,
+                "limit": limit,
+                "sort_by": sort_by,
+                "sort_order": sort_order,
+                "search": search
+            },
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cached repos: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/cache-repos/{repo_type}/{org}/{repo}")
+async def get_repo_details(repo_type: str, org: str, repo: str):
+    """Returns detailed information for a specific repository"""
+    try:
+        cache_stats = CacheStats(app.state.app_settings.config.repos_path)
+        repo_info = cache_stats.get_repo_details(repo_type, org, repo)
+        
+        if repo_info is None:
+            return {
+                "status": "error",
+                "message": "Repository not found in cache"
+            }
+        
+        return {
+            "repo": repo_info,
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Failed to get repo details: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/cache-search")
+async def search_cached_repos(
+    query: str,
+    repo_type: Optional[str] = None,
+    limit: Optional[int] = 100
+):
+    """Search cached repositories"""
+    try:
+        cache_stats = CacheStats(app.state.app_settings.config.repos_path)
+        results = cache_stats.search_repos(query, repo_type)
+        
+        return {
+            "results": results,
+            "total_count": len(results),
+            "query": query,
+            "filters": {
+                "repo_type": repo_type,
+                "limit": limit
+            },
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Failed to search cached repos: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 def init():
