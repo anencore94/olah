@@ -252,6 +252,36 @@ Visit `http://localhost:8090/repos` to access the enhanced web interface that pr
 - **Repository Details**: Click on any repository to view detailed information including size, access times, and file counts
 - **Interactive Management**: Sort, filter, and explore your cached repositories with an intuitive interface
 
+## Metrics and Monitoring
+
+Olah provides comprehensive metrics collection and monitoring capabilities to help you understand system performance and resource usage.
+
+### Metrics Features
+
+- **HTTP Request Metrics**: Track request/response times, status codes, and bytes transferred
+- **System Resource Monitoring**: Real-time CPU, memory, and disk usage tracking
+- **Cache Performance Analytics**: Monitor cache hit rates and efficiency
+- **Network Bandwidth Tracking**: Track data transfer and network I/O
+- **Prometheus Integration**: Export metrics in Prometheus format for monitoring systems
+
+### Available Metrics
+
+#### HTTP Metrics
+- `olah_http_requests_total`: Total number of HTTP requests
+- `olah_http_request_duration_seconds`: Average HTTP request duration
+- `olah_http_bytes_transferred_total`: Total bytes transferred
+
+#### System Metrics
+- `olah_system_cpu_percent`: CPU usage percentage
+- `olah_system_memory_percent`: Memory usage percentage
+- `olah_system_disk_usage_percent`: Disk usage percentage
+
+#### Cache Metrics
+- `olah_cache_requests_total`: Total cache requests
+- `olah_cache_hits_total`: Total cache hits
+- `olah_cache_misses_total`: Total cache misses
+- `olah_cache_hit_rate_percent`: Cache hit rate percentage
+
 ### API Endpoints
 
 | Endpoint                                | Method | Description                                             |
@@ -260,6 +290,8 @@ Visit `http://localhost:8090/repos` to access the enhanced web interface that pr
 | `/cache-repos`                          | GET    | Cached repository list (with filtering/sorting support) |
 | `/cache-repos/{repo_type}/{org}/{repo}` | GET    | Specific repository details                             |
 | `/cache-search`                         | GET    | Repository search (by name/description)                 |
+| `/metrics`                              | GET    | Prometheus-formatted metrics for monitoring systems     |
+| `/api/metrics/stats`                    | GET    | Detailed metrics statistics in JSON format              |
 
 ### Query Parameters
 
@@ -274,7 +306,6 @@ Visit `http://localhost:8090/repos` to access the enhanced web interface that pr
 - Administrator and user system
 - OOS backend support
 - Mirror Update Schedule Task
-- Enhanced metrics and monitoring
 - Advanced download engines (hf_transfer, xet)
 - OIDC authentication and RBAC
 

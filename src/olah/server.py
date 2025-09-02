@@ -35,6 +35,8 @@ from olah.proxy.tree import tree_generator
 from olah.utils.disk_utils import convert_bytes_to_human_readable, convert_to_bytes, get_folder_size, sort_files_by_access_time, sort_files_by_modify_time, sort_files_by_size
 from olah.utils.url_utils import clean_path
 from olah.utils.cache_stats import CacheStats
+from olah.middleware import MetricsMiddleware
+from olah.utils.metrics import get_metrics_collector
 
 BASE_SETTINGS = False
 if not BASE_SETTINGS:
@@ -175,6 +177,9 @@ async def lifespan(app: FastAPI):
 code_file_path = os.path.abspath(__file__)
 app = FastAPI(lifespan=lifespan, debug=False)
 templates = Jinja2Templates(directory=os.path.join(OLAH_CODE_DIR, "static"))
+
+# Add metrics middleware
+app.add_middleware(MetricsMiddleware)
 
 
 class AppSettings(BaseSettings):
@@ -1234,6 +1239,47 @@ async def search_cached_repos(
         }
     except Exception as e:
         logger.error(f"Failed to search cached repos: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+# ======================
+# Metrics API
+# ======================
+@app.get("/metrics")
+async def get_prometheus_metrics():
+    """Returns metrics in Prometheus format for monitoring systems"""
+    try:
+        collector = get_metrics_collector()
+        metrics_data = collector.export_prometheus_metrics()
+        return Response(content=metrics_data, media_type="text/plain")
+    except Exception as e:
+        logger.error(f"Failed to export metrics: {e}")
+        return Response(
+            content=f"# Error exporting metrics: {e}",
+            media_type="text/plain",
+            status_code=500
+        )
+
+
+@app.get("/api/metrics/stats")
+async def get_metrics_stats():
+    """Returns detailed metrics statistics in JSON format"""
+    try:
+        collector = get_metrics_collector()
+        
+        return {
+            "status": "success",
+            "data": {
+                "request_stats": collector.get_request_stats(60),  # Last hour
+                "system_stats": collector.get_system_stats(),
+                "cache_stats": collector.get_cache_stats()
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get metrics stats: {e}")
         return {
             "status": "error",
             "message": str(e)

@@ -26,6 +26,7 @@ from olah.errors import error_entry_not_found, error_proxy_invalid_data, error_p
 from olah.proxy.pathsinfo import pathsinfo_generator
 from olah.utils.cache_utils import read_cache_request, write_cache_request
 from olah.utils.disk_utils import touch_file_access_time
+from olah.utils.metrics import record_cache_hit, record_cache_miss
 from olah.utils.url_utils import (
     RemoteInfo,
     add_query_param,
@@ -193,6 +194,8 @@ async def _file_chunk_get(
             for (range_start_pos, range_end_pos), is_remote in ranges_and_cache_list:
                 # range_start_pos is zero-index and range_end_pos is exclusive
                 if is_remote:
+                    # Cache miss - data needs to be fetched from remote
+                    record_cache_miss()
                     generator = _get_file_range_from_remote(
                         client,
                         RemoteInfo(method, url, headers),
@@ -201,6 +204,8 @@ async def _file_chunk_get(
                         range_end_pos,
                     )
                 else:
+                    # Cache hit - data is available locally
+                    record_cache_hit()
                     generator = _get_file_range_from_cache(
                         cache_file,
                         range_start_pos,
